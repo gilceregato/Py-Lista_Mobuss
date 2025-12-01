@@ -3,13 +3,14 @@ import pandas as pd
 import tempfile
 import openpyxl
 import time
+import datetime
 from pathlib import Path
 from openpyxl import load_workbook
 
 TEMPLATE_PATH = Path("Entradas/TEMPLATE-SITUAÇÃO DE PROJETOS COMPLEMENTARES.xlsx")
 
 ## Funções
-def ajusta_lista(arquivo_excel, fases_selecionadas, remover_disciplina_arq=True):
+def ajusta_lista(arquivo_excel, fases_selecionadas, remover_disciplina_arq=True, data_range=[datetime.date.today(),datetime.date.today().year + 1]):
     # Abrindo o arquivo Excel
     tabela = pd.read_excel(arquivo_excel)
 
@@ -20,8 +21,10 @@ def ajusta_lista(arquivo_excel, fases_selecionadas, remover_disciplina_arq=True)
                     'Unnamed: 3',
                     'Unnamed: 4',
                     'Unnamed: 5',
+                    'Unnamed: 6',
                     'Unnamed: 8',
-                    'Unnamed: 9']]
+                    'Unnamed: 9',
+                    'Unnamed: 13']]
     index_tabela = {'Revisão de Projeto':'Documento',
                     'Unnamed: 1':'Código',
                     'Unnamed: 2':'Revisão',
@@ -29,7 +32,8 @@ def ajusta_lista(arquivo_excel, fases_selecionadas, remover_disciplina_arq=True)
                     'Unnamed: 4':'Situação',
                     'Unnamed: 5':'Título',
                     'Unnamed: 8':'Disciplina',
-                    'Unnamed: 9':'Fase'}
+                    'Unnamed: 9':'Fase',
+                    'Unnamed: 13':'Data de Alteração'}
     tabela.rename(columns=index_tabela, inplace=True)
 
     #Removendo linhas desnecessárias
@@ -44,7 +48,8 @@ def ajusta_lista(arquivo_excel, fases_selecionadas, remover_disciplina_arq=True)
                     'Documento',
                     'Extensão',
                     'Situação',
-                    'Título']]
+                    'Título',
+                    'Data de Alteração']]
 
     # Filtrando por fase
     tabela = tabela[tabela['Fase'].isin(fases_selecionadas)]
@@ -54,6 +59,18 @@ def ajusta_lista(arquivo_excel, fases_selecionadas, remover_disciplina_arq=True)
     if remover_disciplina_arq == True:
         tabela = tabela[~tabela['Disciplina'].isin(disciplina_remover)]
     
+    # Ajustando a coluna data de alteração
+    tabela['Data de Alteração'] = pd.to_datetime(tabela['Data de Alteração'], errors='coerce').dt.date
+    
+        # Filtrando por data de alteração
+    data_inicial = (data_range[0])
+    data_final = (data_range[1])
+
+    tabela = tabela[(tabela['Data de Alteração'] >= data_inicial) & (tabela['Data de Alteração'] <= data_final)]
+    
+    # Removendo a coluna data de alteração
+    tabela = tabela.drop(columns=['Data de Alteração'])
+
     return tabela
 
 def ajusta_planilha_template (sigla_empreendimento, nome_empreendimento,arquivo_origem, arquivo_destino):
@@ -115,8 +132,6 @@ if __name__ == '__main__':
     uploaded_file = st.file_uploader("Escolha o arquivo Excel", type=["xlsx"])
 
     if uploaded_file:
-        with st.spinner(f"Processando: {uploaded_file.name}", show_time=True):
-            time.sleep(5)
 
         # 1. Criar arquivo temporário para salvar a tabela tratada
         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as temp_file:
@@ -140,7 +155,7 @@ if __name__ == '__main__':
         nome_empreendimento = sheet['H4'].value
         sigla_empreendimento = nome_empreendimento[0:7]
 
-        # Seleção de fases
+        # Filtros
         st.markdown("### 2) Seleção de Fases")
         fases_selecionadas = st.multiselect(
             label="**Selecione as fases que deseja incluir na lista mestra gerada a partir do arquivo enviado:**",
@@ -151,19 +166,34 @@ if __name__ == '__main__':
             st.warning("Selecione pelo menos uma fase para continuar.")
         else:
 
+            # Filtro de datas
+            hoje = datetime.date.today()
+            ano_passado = hoje.replace(year=hoje.year - 1)
+            ano_que_vem = hoje.replace(year=hoje.year + 1)
+
+            data_range = st.date_input(
+                label="**3) Selecione o intervalo de datas de alteração/atualização dos arquivos:**",
+                min_value=ano_passado,
+                max_value=ano_que_vem,
+                value=(hoje, ano_que_vem),
+                format="DD/MM/YYYY"
+                )
+            st.error('Atenção: só serão inseridos na lista arquivos cuja Data de Alteração esteja no intervalo selecionado acima!')
+
             # Botão para iniciar o processamento
             st.divider()
-            st.markdown("### 3) Gerar Lista Mestra")
+            st.markdown("### 4) Gerar Lista Mestra")
 
-            st.markdown("3.1 - Se a caixa abaixo estiver marcada as disciplinas de Acessibilidade, Arquitetura, Comunicação Visual, Interiores, Paisagismo e Publicidade serão removidas da lista mestra gerada.")
+            st.markdown("4.1 - Se a caixa abaixo estiver marcada as disciplinas de Acessibilidade, Arquitetura, Comunicação Visual, Interiores, Paisagismo e Publicidade serão removidas da lista mestra gerada.")
             remover_disciplina_arq = st.checkbox("Remover disciplinas de Arquitetura", value=True)
             st.markdown("")
-            st.markdown("3.2 - Após clicar no botão abaixo, aguarde o processamento e, em seguida, faça o download da planilha ajustada.")
+            st.markdown("4.2 - Após clicar no botão abaixo, aguarde o processamento e, em seguida, faça o download da planilha ajustada.")
             gerar = st.button("Gerar lista mestra")
+            
             if gerar:
                 # 2. Ajustar a lista e salvar arquivo tratado temporário
                 tabela_tratada = pd.read_excel(uploaded_file)
-                tabela_tratada = ajusta_lista(uploaded_file, fases_selecionadas, remover_disciplina_arq=True)
+                tabela_tratada = ajusta_lista(uploaded_file, fases_selecionadas, remover_disciplina_arq=True, data_range=data_range)
                 tabela_tratada.to_excel(temp_tratada_path, index=False)
 
                 # 3. Aplicar o template na planilha tratada
@@ -185,10 +215,9 @@ if __name__ == '__main__':
                     )
                 
                 st.success("Processamento concluído com sucesso! Faça o download da planilha ajustada.")
-        
-        
+
     # Rodapé
     st.divider()
     st.markdown(':red[Atenção: os documentos gerados por este script, ou parte deles, é de **uso exclusivo para uso da Rottas Construtora e Incorporadora**. Seu envio para terceiros, bem como sua reprodução total ou parcial são proibidos.]')
     st.write('Criado por Gilmar Ceregato | 2025')
-    st.write('Rev. 01 - 22/10/2025')
+    st.write('Rev. 02 - 01/12/2025')
