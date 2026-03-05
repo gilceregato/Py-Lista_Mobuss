@@ -43,25 +43,35 @@ def ajusta_lista(arquivo_excel, fases_selecionadas, disciplinas_selecionadas=Non
 
     return tabela
 
-def ajusta_planilha_template(sigla_empreendimento, nome_empreendimento, arquivo_origem, arquivo_destino):
+def ajusta_planilha_template(sigla_empreendimento, nome_empreendimento, df_dados, arquivo_destino):
     novo_arquivo = SAIDAS_FOLDER / f"[{sigla_empreendimento}]-Lista_Mestra.xlsx"
-
-    intervalo_inicial = "A2"
-    intervalo_final = "M10000"
-
-    wb_origem = load_workbook(arquivo_origem)
-    ws_origem = wb_origem["Sheet1"]
-    celulas_origem = ws_origem[intervalo_inicial:intervalo_final]
 
     wb_destino = load_workbook(arquivo_destino)
     ws_destino = wb_destino["0-DADOS"]
 
-    linha_inicio = 2
-    coluna_inicio = 1
+    # Limpa dados existentes a partir da linha 2
+    if ws_destino.max_row >= 2:
+        for row in ws_destino.iter_rows(min_row=2, max_row=ws_destino.max_row):
+            for cell in row:
+                cell.value = None
 
-    for i, linha in enumerate(celulas_origem):
-        for j, celula in enumerate(linha):
-            ws_destino.cell(row=linha_inicio + i, column=coluna_inicio + j, value=celula.value)
+    linha_inicio = 2
+
+    # Ordem das colunas conforme o preview (tabelaCompleta no JS):
+    # 'Disciplina', 'Fase', 'Código', 'Revisão', 'Documento', 'Extensão', 'Situação', 'Título',
+    # 'Liberado para Orçamento', 'Liberado para compra de materiais?', 'Observações', 
+    # 'Prazo de entrega dos projetos', 'Prazo de análise dos projetos'
+    
+    colunas_ordem = [
+        'Disciplina', 'Fase', 'Código', 'Revisão', 'Documento', 'Extensão', 'Situação', 'Título',
+        'Liberado para Orçamento', 'Liberado para compra de materiais?', 'Observações',
+        'Prazo de entrega dos projetos', 'Prazo de análise dos projetos'
+    ]
+
+    for i, (_, row) in enumerate(df_dados.iterrows()):
+        for j, col_name in enumerate(colunas_ordem):
+            value = row.get(col_name, "")
+            ws_destino.cell(row=linha_inicio + i, column=1 + j, value=value)
 
     ws_resumo = wb_destino["RESUMO GERAL"]
     ws_resumo['C4'] = nome_empreendimento
@@ -168,11 +178,7 @@ def preview_file():
 def process_file():
     data = request.json
     file_id = data.get('file_id')
-    fases_selecionadas = data.get('fases', [])
-    disciplinas_selecionadas = data.get('disciplinas_selecionadas', [])
-    data_inicial_str = data.get('data_inicial')
-    data_final_str = data.get('data_final')
-    tabela_editada = data.get('tabela_editada', []) # Recebe as edições das colunas I a M
+    tabela_completa = data.get('tabela_completa', [])  # Dados completos vindos do browser
     
     if not file_id or not (UPLOAD_FOLDER / file_id).exists():
         return jsonify({'error': 'Arquivo não encontrado. Faça o upload novamente.'}), 400
@@ -185,39 +191,13 @@ def process_file():
         nome_empreendimento = str(sheet['H4'].value) if sheet['H4'].value else "Empreendimento"
         sigla_empreendimento = nome_empreendimento[0:7] if len(nome_empreendimento) >= 7 else "PROJETO"
 
-        data_inicial = datetime.datetime.strptime(data_inicial_str, '%Y-%m-%d').date()
-        data_final = datetime.datetime.strptime(data_final_str, '%Y-%m-%d').date()
+        if not tabela_completa:
+            return jsonify({'error': 'Nenhum dado recebido do navegador. Gere a pré-visualização antes de exportar.'}), 400
+
+        # Montar DataFrame diretamente com os dados exatamente como exibidos na tabela do browser
+        df_final = pd.DataFrame(tabela_completa)
         
-        tabela_tratada = ajusta_lista(filepath, fases_selecionadas, disciplinas_selecionadas=disciplinas_selecionadas, data_range=[data_inicial, data_final])
-        
-        # Injetar os dados editados pelo usuário no DataFrame
-        if tabela_editada:
-            # Definir as colunas na ordem I, J, K, L, M
-            novas_colunas = [
-                'Liberado para Orçamento', 
-                'Liberado para compra de materiais?', 
-                'Observações', 
-                'Prazo de entrega dos projetos', 
-                'Prazo de análise dos projetos'
-            ]
-            
-            # Garantir que tabela_editada tenha o mesmo tamanho que tabela_tratada para criar o DataFrame alinhado
-            # E caso algum id venha menor, preencher com dicts vazios
-            while len(tabela_editada) < len(tabela_tratada):
-                tabela_editada.append({c: '' for c in novas_colunas})
-                
-            edicoes_df = pd.DataFrame(tabela_editada[:len(tabela_tratada)])
-            
-            # Concatenar horizontalmente no DataFrame original
-            tabela_tratada = pd.concat([tabela_tratada.reset_index(drop=True), edicoes_df.reset_index(drop=True)], axis=1)
-        
-        temp_tratada_path = UPLOAD_FOLDER / f"tratada_{file_id}"
-        tabela_tratada.to_excel(temp_tratada_path, index=False)
-        
-        arquivo_final = ajusta_planilha_template(sigla_empreendimento, nome_empreendimento, temp_tratada_path, TEMPLATE_PATH)
-        
-        if temp_tratada_path.exists():
-            temp_tratada_path.unlink()
+        arquivo_final = ajusta_planilha_template(sigla_empreendimento, nome_empreendimento, df_final, TEMPLATE_PATH)
             
         if filepath.exists():
             filepath.unlink()

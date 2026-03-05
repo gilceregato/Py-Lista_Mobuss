@@ -393,12 +393,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedFases = Array.from(phasesContainer.querySelectorAll('input:checked')).map(i => i.value);
         const selectedDisciplines = Array.from(disciplinesContainer.querySelectorAll('input:checked')).map(i => i.value);
 
-        // Collect Edited Table Data (only visible rows, in DOM order)
+        // Collect Full Table Data: only visible rows, in DOM order, all columns
         const rows = previewTableBody.querySelectorAll('tr[data-index]');
-        const tabelaEditada = [];
+        const tabelaCompleta = [];
+
+        // Helper func to convert HTML date to DD/MM/YYYY for nicer Excel output
+        function formatDateForExcel(dateStr) {
+            if (!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
 
         rows.forEach(tr => {
-            tabelaEditada.push({
+            // Skip hidden rows (filtered out by column filter)
+            if (tr.style.display === 'none') return;
+
+            // Fixed columns (children index: 0=checkbox, 1=Disciplina, 2=Fase, 3=Código, 4=Revisão, 5=Documento, 6=Extensão, 7=Situação, 8=Título)
+            tabelaCompleta.push({
+                'Disciplina': tr.children[1] ? tr.children[1].textContent.trim() : '',
+                'Fase': tr.children[2] ? tr.children[2].textContent.trim() : '',
+                'Código': tr.children[3] ? tr.children[3].textContent.trim() : '',
+                'Revisão': tr.children[4] ? tr.children[4].textContent.trim() : '',
+                'Documento': tr.children[5] ? tr.children[5].textContent.trim() : '',
+                'Extensão': tr.children[6] ? tr.children[6].textContent.trim() : '',
+                'Situação': tr.children[7] ? tr.children[7].textContent.trim() : '',
+                'Título': tr.children[8] ? tr.children[8].textContent.trim() : '',
                 'Liberado para Orçamento': tr.querySelector('.edit-orcam').value,
                 'Liberado para compra de materiais?': tr.querySelector('.edit-materiais').value,
                 'Observações': tr.querySelector('.edit-obs').value,
@@ -407,20 +426,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Helper func to convert HTML date to DD/MM/YYYY for nicer Excel output (optional)
-        function formatDateForExcel(dateStr) {
-            if (!dateStr) return '';
-            const [y, m, d] = dateStr.split('-');
-            return `${d}/${m}/${y}`;
-        }
-
         const payload = {
             file_id: currentFileId,
             fases: selectedFases,
             disciplinas_selecionadas: selectedDisciplines,
             data_inicial: dateInit.value,
             data_final: dateFinal.value,
-            tabela_editada: tabelaEditada
+            tabela_completa: tabelaCompleta
         };
 
         generateBtn.disabled = true;
