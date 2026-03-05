@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista Mestra | Rottas Construtora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <main class="glass-container">
+        <header>
+            <img src="/Assets/Logo_rottas.png"
+                onerror="this.src='https://via.placeholder.com/200x60?text=Rottas+Construtora'" alt="Logo Rottas"
+                class="logo">
+            <h1>Gerar Lista Mestra de Arquivos</h1>
+            <p class="subtitle">Faça o upload do Excel extraído do Mobuss para gerar automaticamente a lista de projetos
+                complementares.</p>
+        </header>
+
+        <section class="step-card" id="step-1">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <h2>Upload do Arquivo</h2>
+            </div>
+            <div class="file-upload-wrapper">
+                <input type="file" id="excel-file" accept=".xlsx" hidden>
+                <label for="excel-file" class="file-upload-box" id="drop-zone">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span class="file-msg">Clique ou arraste o arquivo .xlsx do Mobuss aqui</span>
+                    <span class="file-name" id="selected-file-name">Nenhum arquivo selecionado</span>
+                </label>
+            </div>
+            <button id="upload-btn" class="btn btn-primary" disabled>Ler Arquivo</button>
+            <div class="loader" id="upload-loader" style="display: none;">Processando arquivo...</div>
+        </section>
+
+        <section class="step-card disabled" id="step-2">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <h2>Filtros e Configurações <span id="project-name-badge" class="badge" style="display:none;"></span>
+                </h2>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group-header">
+                    <label>Fases (Selecione as fases que deseja incluir:)</label>
+                    <div class="quick-select-btns">
+                        <button type="button" id="fases-select-all" class="btn-quick">Selecionar todas</button>
+                        <button type="button" id="fases-select-none" class="btn-quick btn-quick-none">Nenhuma</button>
+                    </div>
+                </div>
+                <div class="checkbox-grid" id="fases-container">
+                    <!-- Checkboxes will be injected here -->
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="data-inicial">Data Inicial de Alteração</label>
+                    <input type="date" id="data-inicial">
+                </div>
+                <div class="form-group">
+                    <label for="data-final">Data Final de Alteração</label>
+                    <input type="date" id="data-final">
+                </div>
+            </div>
+            <div class="alert alert-warning">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                    </path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <span>Atenção: só serão inseridos na lista mestra final arquivos cuja <strong>Data de Alteração</strong>
+                    esteja no intervalo selecionado acima!</span>
+            </div>
+
+            <div class="form-group mt-3">
+                <div class="checkbox-group-header">
+                    <label>Disciplinas (Selecione as disciplinas que deseja incluir:)</label>
+                    <div class="quick-select-btns">
+                        <button type="button" id="disciplinas-select-all" class="btn-quick">Selecionar todas</button>
+                        <button type="button" id="disciplinas-select-none"
+                            class="btn-quick btn-quick-none">Nenhuma</button>
+                    </div>
+                </div>
+                <div class="checkbox-grid" id="disciplinas-container">
+                    <!-- Checkboxes will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <section class="step-card disabled" id="step-3">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <h2>Pré-visualizar Tabela</h2>
+            </div>
+            <button id="preview-btn" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Gerar Pré-visualização
+            </button>
+            <div class="loader" id="preview-loader" style="display: none;">Montando tabela de dados...</div>
+        </section>
+
+        <section class="step-card disabled" id="step-4">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <h2>Revisão e Geração da Lista Mestra</h2>
+            </div>
+
+            <!-- Barra de edição em massa -->
+            <div id="bulk-edit-bar" style="display:none; margin-bottom: 1rem;" class="bulk-edit-bar">
+                <div class="bulk-bar-header">
+                    <strong id="bulk-count">0 linha(s) selecionada(s)</strong>
+                    <span style="opacity:0.4; margin: 0 0.5rem;">|</span>
+                    <span style="font-size:0.85rem; color:#94a3b8;">Preencha os campos abaixo e clique em Aplicar para
+                        alterar todas as linhas selecionadas</span>
+                </div>
+                <div class="bulk-fields-row">
+                    <div class="bulk-field-group">
+                        <label>Liberado Orçamento</label>
+                        <select id="bulk-orcam">
+                            <option value="">(sem alteração)</option>
+                            <option value="SIM">SIM</option>
+                            <option value="NÃO">NÃO</option>
+                        </select>
+                    </div>
+                    <div class="bulk-field-group">
+                        <label>Liberado para Compra de Materiais</label>
+                        <select id="bulk-materiais">
+                            <option value="">(sem alteração)</option>
+                            <option value="SIM">SIM</option>
+                            <option value="NÃO">NÃO</option>
+                        </select>
+                    </div>
+                    <div class="bulk-field-group">
+                        <label>Observações</label>
+                        <input type="text" id="bulk-obs" placeholder="(sem alteração)">
+                    </div>
+                    <div class="bulk-field-group">
+                        <label>Prazo Entrega</label>
+                        <input type="date" id="bulk-prazo-entrega">
+                    </div>
+                    <div class="bulk-field-group">
+                        <label>Prazo Análise</label>
+                        <input type="date" id="bulk-prazo-analise">
+                    </div>
+                    <button id="bulk-apply-btn" class="btn-bulk-apply">Aplicar ✔</button>
+                </div>
+            </div>
+
+            <div class="table-responsive" id="table-container" style="display: none; margin-bottom: 2rem;">
+                <table class="data-table" id="preview-table">
+                    <thead>
+                        <tr>
+                            <!-- Checkbox de seleção -->
+                            <th class="col-check"><input type="checkbox" id="select-all-rows" title="Selecionar todas">
+                            </th>
+                            <!-- Colunas Fixas do Mobuss -->
+                            <th class="sortable" data-col="0">
+                                <div class="th-content">Disciplina <span class="filter-icon" data-col="0">&#9660;</span>
+                                </div>
+                            </th>
+                            <th class="sortable" data-col="1">
+                                <div class="th-content">Fase <span class="filter-icon" data-col="1">&#9660;</span></div>
+                            </th>
+                            <th class="sortable" data-col="2">
+                                <div class="th-content">Código <span class="filter-icon" data-col="2">&#9660;</span>
+                                </div>
+                            </th>
+                            <th class="sortable" data-col="3">
+                                <div class="th-content">Revisão <span class="filter-icon" data-col="3">&#9660;</span>
+                                </div>
+                            </th>
+                            <th class="sortable" data-col="4">
+                                <div class="th-content">Documento <span class="filter-icon" data-col="4">&#9660;</span>
+                                </div>
+                            </th>
+                            <th class="sortable" data-col="5">
+                                <div class="th-content">Extensão <span class="filter-icon" data-col="5">&#9660;</span>
+                                </div>
+                            </th>
+                            <th class="sortable" data-col="6">
+                                <div class="th-content">Situação <span class="filter-icon" data-col="6">&#9660;</span>
+                                </div>
+                            </th>
+                            <th class="sortable" data-col="7">
+                                <div class="th-content">Título <span class="filter-icon" data-col="7">&#9660;</span>
+                                </div>
+                            </th>
+                            <!-- Novas Colunas Editáveis -->
+                            <th class="editable-col">Liberado Orçamento</th>
+                            <th class="editable-col">Liberado para Compra de Materiais</th>
+                            <th class="editable-col">Observações</th>
+                            <th class="editable-col">Prazo Entrega</th>
+                            <th class="editable-col">Prazo Análise</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Linhas Injetadas via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button id="generate-btn" class="btn btn-success" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Confirmar Dados e Gerar Lista
+            </button>
+            <div class="loader" id="generate-loader" style="display: none;">Gerando lista mestra com revisões, por favor
+                aguarde...</div>
+
+            <div id="download-section" style="display: none; margin-top: 1rem;">
+                <div class="alert alert-success mt-1 mb-1">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Processamento concluído com sucesso!
+                </div>
+                <a id="download-link" href="#" class="btn btn-download">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Baixar Planilha Final ajustada
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <p class="warning"><strong>Atenção:</strong> os documentos gerados por este script, ou parte deles, são de
+                uso exclusivo para a <strong>Rottas Construtora e Incorporadora</strong>. Seu envio para terceiros, bem
+                como sua reprodução total ou parcial, são proibidos.</p>
+            <p class="credits">Criado por Gilmar Ceregato | 2025<br>Rev. 03 - 04/03/2026</p>
+        </footer>
+    </main>
+
+    <!-- Single floating filter panel -->
+    <div id="filter-panel" class="filter-dropdown" style="display:none; position:fixed; z-index:9999;"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
