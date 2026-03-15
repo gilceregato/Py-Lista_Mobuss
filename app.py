@@ -1,21 +1,21 @@
 from flask import Flask, request, jsonify, render_template, send_file, after_this_request
 import pandas as pd
-import tempfile
 import openpyxl
-import time
 import datetime
 from pathlib import Path
 from openpyxl import load_workbook
 import os
 import uuid
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", template_folder="templates")
 
-TEMPLATE_PATH = Path("Entradas/TEMPLATE-SITUAÇÃO DE PROJETOS COMPLEMENTARES.xlsx")
-UPLOAD_FOLDER = Path("temp_uploads")
-UPLOAD_FOLDER.mkdir(exist_ok=True)
-SAIDAS_FOLDER = Path("Saidas")
-SAIDAS_FOLDER.mkdir(exist_ok=True)
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+TEMPLATE_PATH = DATA_DIR / "templates" / "TEMPLATE-SITUAÇÃO DE PROJETOS COMPLEMENTARES.xlsx"
+UPLOAD_FOLDER = DATA_DIR / "uploads"
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+SAIDAS_FOLDER = DATA_DIR / "outputs"
+SAIDAS_FOLDER.mkdir(parents=True, exist_ok=True)
 
 def ajusta_lista(arquivo_excel, fases_selecionadas, disciplinas_selecionadas=None, data_range=None):
     if data_range is None:
@@ -48,6 +48,10 @@ def ajusta_planilha_template(sigla_empreendimento, nome_empreendimento, df_dados
 
     wb_destino = load_workbook(arquivo_destino)
     ws_destino = wb_destino["0-DADOS"]
+    # Remove tabelas/autofiltros para evitar corrupcao no Excel gerado
+    for name in list(ws_destino.tables):
+        del ws_destino.tables[name]
+    ws_destino.auto_filter.ref = None
 
     # Limpa dados existentes a partir da linha 2
     if ws_destino.max_row >= 2:
@@ -83,10 +87,6 @@ def ajusta_planilha_template(sigla_empreendimento, nome_empreendimento, df_dados
 def index():
     return render_template('index.html')
 
-@app.route('/Assets/<path:filename>')
-def custom_static_assets(filename):
-    return send_file(os.path.join('Assets', filename))
-
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -116,8 +116,11 @@ def upload_file():
             disciplinas_unicas = [str(d) for d in disciplinas_unicas if str(d).strip() != "Disciplina" and str(d).strip() != ""]
             
             wb = openpyxl.load_workbook(filepath, read_only=True)
-            sheet = wb.active
-            nome_empreendimento = str(sheet['H4'].value) if sheet['H4'].value else "Empreendimento"
+            try:
+                sheet = wb.active
+                nome_empreendimento = str(sheet['H4'].value) if sheet['H4'].value else "Empreendimento"
+            finally:
+                wb.close()
             
             # Extract the oldest date from 'Data de Alteração' column
             data_inicial_padrao = None
@@ -187,9 +190,12 @@ def process_file():
     
     try:
         wb = openpyxl.load_workbook(filepath, read_only=True)
-        sheet = wb.active
-        nome_empreendimento = str(sheet['H4'].value) if sheet['H4'].value else "Empreendimento"
-        sigla_empreendimento = nome_empreendimento[0:7] if len(nome_empreendimento) >= 7 else "PROJETO"
+        try:
+            sheet = wb.active
+            nome_empreendimento = str(sheet['H4'].value) if sheet['H4'].value else "Empreendimento"
+            sigla_empreendimento = nome_empreendimento[0:7] if len(nome_empreendimento) >= 7 else "PROJETO"
+        finally:
+            wb.close()
 
         if not tabela_completa:
             return jsonify({'error': 'Nenhum dado recebido do navegador. Gere a pré-visualização antes de exportar.'}), 400
@@ -229,4 +235,7 @@ def download_file(filename):
     return jsonify({'error': 'Arquivo não encontrado'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8000)
+    host = os.getenv("FLASK_HOST", "127.0.0.1")
+    port = int(os.getenv("FLASK_PORT", "8000"))
+    debug = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host=host, port=port, debug=debug)

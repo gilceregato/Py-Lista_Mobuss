@@ -6,9 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadBtn = document.getElementById('upload-btn');
     const uploadLoader = document.getElementById('upload-loader');
 
-    const step2 = document.getElementById('step-2');
-    const step3 = document.getElementById('step-3');
-    const step4 = document.getElementById('step-4');
+    const stepPanels = Array.from(document.querySelectorAll('.step-panel'));
+    const stepIndicators = Array.from(document.querySelectorAll('.step-indicator'));
+    const step1Next = document.getElementById('step1-next');
+    const step2Back = document.getElementById('step2-back');
+    const step2Next = document.getElementById('step2-next');
+    const step3Back = document.getElementById('step3-back');
+    const step3Skip = document.getElementById('step3-skip');
+    const step3Next = document.getElementById('step3-next');
+    const step4Back = document.getElementById('step4-back');
+    const showPreviewToggle = document.getElementById('show-preview-toggle');
     const phasesContainer = document.getElementById('fases-container');
     const disciplinesContainer = document.getElementById('disciplinas-container');
     const badge = document.getElementById('project-name-badge');
@@ -40,6 +47,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State
     let currentFileId = null;
+    let previewReady = false;
+    let previewDataCache = null;
+
+    function setActiveStep(step) {
+        stepPanels.forEach(panel => {
+            panel.classList.toggle('active', panel.getAttribute('data-step') === String(step));
+        });
+        stepIndicators.forEach(ind => {
+            ind.classList.toggle('active', ind.getAttribute('data-step') === String(step));
+        });
+        if (step === 4) {
+            updatePreviewVisibility();
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     // File Drop & Select
     dropZone.addEventListener('dragover', (e) => {
@@ -77,6 +99,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Step navigation
+    step1Next.addEventListener('click', () => setActiveStep(2));
+    step2Back.addEventListener('click', () => setActiveStep(1));
+    step3Back.addEventListener('click', () => setActiveStep(2));
+    step3Skip.addEventListener('click', () => {
+        if (showPreviewToggle) showPreviewToggle.checked = false;
+        updatePreviewVisibility(false);
+        setActiveStep(4);
+    });
+    step4Back.addEventListener('click', () => setActiveStep(3));
+
     // Upload Action
     uploadBtn.addEventListener('click', async () => {
         const file = fileInput.files[0];
@@ -103,6 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success) {
                 currentFileId = data.file_id;
+                previewReady = false;
+                previewDataCache = null;
+                step3Next.disabled = true;
+                if (showPreviewToggle) showPreviewToggle.checked = false;
+                updatePreviewVisibility(false);
 
                 // Populate phases
                 phasesContainer.innerHTML = '';
@@ -147,10 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     dateInit.value = data.data_inicial_padrao;
                 }
 
-                // Enable Step 2 and Step 3
-                step2.classList.remove('disabled');
-                step3.classList.remove('disabled');
-                step4.classList.remove('disabled');
+                // Enable navigation to Step 2
+                step1Next.disabled = false;
 
                 // Wire quick-select buttons for fases
                 document.getElementById('fases-select-all').addEventListener('click', () => {
@@ -197,6 +233,30 @@ document.addEventListener('DOMContentLoaded', () => {
         parent.appendChild(div);
     }
 
+    function getSelectedFilters() {
+        const selectedFases = Array.from(phasesContainer.querySelectorAll('input:checked')).map(i => i.value);
+        const selectedDisciplines = Array.from(disciplinesContainer.querySelectorAll('input:checked')).map(i => i.value);
+        return { selectedFases, selectedDisciplines };
+    }
+
+    function validateSelections(selectedFases, selectedDisciplines) {
+        if (selectedFases.length === 0) {
+            alert('Atenção: Por favor, selecione pelo menos uma fase de projeto para continuar.');
+            return false;
+        }
+        if (selectedDisciplines.length === 0) {
+            alert('Atenção: Por favor, selecione pelo menos uma disciplina para continuar.');
+            return false;
+        }
+        return true;
+    }
+
+    step2Next.addEventListener('click', () => {
+        const { selectedFases, selectedDisciplines } = getSelectedFilters();
+        if (!validateSelections(selectedFases, selectedDisciplines)) return;
+        setActiveStep(3);
+    });
+
     // Preview Action
     const previewBtn = document.getElementById('preview-btn');
     const previewLoader = document.getElementById('preview-loader');
@@ -204,18 +264,8 @@ document.addEventListener('DOMContentLoaded', () => {
     previewBtn.addEventListener('click', async () => {
         if (!currentFileId) return;
 
-        const selectedFases = Array.from(phasesContainer.querySelectorAll('input:checked')).map(i => i.value);
-        const selectedDisciplines = Array.from(disciplinesContainer.querySelectorAll('input:checked')).map(i => i.value);
-
-        if (selectedFases.length === 0) {
-            alert('Atenção: Por favor, selecione pelo menos uma fase de projeto para continuar.');
-            return;
-        }
-
-        if (selectedDisciplines.length === 0) {
-            alert('Atenção: Por favor, selecione pelo menos uma disciplina para continuar.');
-            return;
-        }
+        const { selectedFases, selectedDisciplines } = getSelectedFilters();
+        if (!validateSelections(selectedFases, selectedDisciplines)) return;
 
         const payload = {
             file_id: currentFileId,
@@ -227,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         previewBtn.disabled = true;
         previewLoader.style.display = 'flex';
-        tableContainer.style.display = 'none';
+        updatePreviewVisibility(false);
 
         try {
             const res = await fetch('/preview', {
@@ -239,11 +289,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (data.success) {
-                renderTable(data.data);
-                tableContainer.style.display = 'block';
-                document.getElementById('generate-btn').style.display = 'inline-flex';
-                // Scroll smoothly to step 4
-                step4.scrollIntoView({ behavior: 'smooth' });
+                previewDataCache = data.data;
+                renderTable(previewDataCache);
+                previewReady = true;
+                step3Next.disabled = false;
+                if (showPreviewToggle) {
+                    showPreviewToggle.checked = true;
+                    updatePreviewVisibility();
+                }
             } else {
                 alert(data.error || 'Erro ao gerar pré-visualização.');
             }
@@ -319,6 +372,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function updatePreviewVisibility(force) {
+        if (!showPreviewToggle) return;
+        const shouldShow = (typeof force === 'boolean')
+            ? force
+            : (showPreviewToggle.checked && previewReady);
+        tableContainer.style.display = shouldShow ? 'block' : 'none';
+        if (!shouldShow) bulkEditBar.style.display = 'none';
+    }
+
+    if (showPreviewToggle) {
+        showPreviewToggle.addEventListener('change', () => updatePreviewVisibility());
+    }
+
+    step3Next.addEventListener('click', () => setActiveStep(4));
+
     // Bulk-edit logic
     const bulkEditBar = document.getElementById('bulk-edit-bar');
     const bulkCount = document.getElementById('bulk-count');
@@ -386,12 +454,51 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadSection = document.getElementById('download-section');
     const downloadLink = document.getElementById('download-link');
 
+    async function ensurePreviewData() {
+        if (previewReady && previewDataCache) return true;
+
+        const { selectedFases, selectedDisciplines } = getSelectedFilters();
+        if (!validateSelections(selectedFases, selectedDisciplines)) return false;
+
+        const payload = {
+            file_id: currentFileId,
+            fases: selectedFases,
+            disciplinas_selecionadas: selectedDisciplines,
+            data_inicial: dateInit.value,
+            data_final: dateFinal.value
+        };
+
+        try {
+            const res = await fetch('/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                previewDataCache = data.data;
+                renderTable(previewDataCache);
+                previewReady = true;
+                step3Next.disabled = false;
+                updatePreviewVisibility();
+                return true;
+            }
+            alert(data.error || 'Erro ao gerar pré-visualização.');
+            return false;
+        } catch (err) {
+            alert('Erro de conexão ao gerar a pré-visualização.');
+            return false;
+        }
+    }
+
     generateBtn.addEventListener('click', async () => {
         if (!currentFileId) return;
 
+        const ready = await ensurePreviewData();
+        if (!ready) return;
+
         // Collect phases and disciplines
-        const selectedFases = Array.from(phasesContainer.querySelectorAll('input:checked')).map(i => i.value);
-        const selectedDisciplines = Array.from(disciplinesContainer.querySelectorAll('input:checked')).map(i => i.value);
+        const { selectedFases, selectedDisciplines } = getSelectedFilters();
 
         // Collect Full Table Data: only visible rows, in DOM order, all columns
         const rows = previewTableBody.querySelectorAll('tr[data-index]');
