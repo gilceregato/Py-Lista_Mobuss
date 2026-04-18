@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -7,16 +7,12 @@
     <title>Lista Mestra | Rottas Construtora</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
-    <div class="background-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-    </div>
+    <!-- Background shapes are hidden via CSS to maintain match with Orc-aBIM aesthetic -->
 
     <main class="glass-container">
         <header>
@@ -28,12 +24,12 @@
                 complementares.</p>
         </header>
 
-        <div class="stepper" aria-label="Progresso">
+        <nav class="stepper" aria-label="Progresso do processo">
             <div class="step-indicator active" data-step="1"><span>1</span> Upload</div>
             <div class="step-indicator" data-step="2"><span>2</span> Filtros</div>
             <div class="step-indicator" data-step="3"><span>3</span> Prévia</div>
             <div class="step-indicator" data-step="4"><span>4</span> Gerar</div>
-        </div>
+        </nav>
 
         <section class="step-panel active" id="step-1" data-step="1">
             <div class="step-card">
@@ -45,18 +41,18 @@
                     <input type="file" id="excel-file" accept=".xlsx" hidden>
                     <label for="excel-file" class="file-upload-box" id="drop-zone">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; color: var(--secondary);">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        <span class="file-msg">Clique ou arraste o arquivo .xlsx do Mobuss aqui</span>
-                        <span class="file-name" id="selected-file-name">Nenhum arquivo selecionado</span>
+                        <div class="file-msg">Clique ou arraste o arquivo .xlsx do Mobuss aqui</div>
+                        <div class="file-name" id="selected-file-name">Nenhum arquivo selecionado</div>
                     </label>
                 </div>
                 <button id="upload-btn" class="btn btn-primary" disabled>Ler Arquivo</button>
                 <div class="loader" id="upload-loader" style="display: none;">Processando arquivo...</div>
-                <div class="step-nav">
+                <div class="step-nav" style="margin-top: 1.5rem;">
                     <button id="step1-next" class="btn btn-primary" disabled>Continuar</button>
                 </div>
             </div>
@@ -66,8 +62,7 @@
             <div class="step-card">
                 <div class="step-header">
                     <span class="step-number">2</span>
-                    <h2>Filtros e Configurações <span id="project-name-badge" class="badge" style="display:none;"></span>
-                    </h2>
+                    <h2>Filtros e Configurações <span id="project-name-badge" class="badge" style="display:none;"></span></h2>
                 </div>
 
                 <div class="form-group">
@@ -75,11 +70,11 @@
                         <label>Fases (Selecione as fases que deseja incluir:)</label>
                         <div class="quick-select-btns">
                             <button type="button" id="fases-select-all" class="btn-quick">Selecionar todas</button>
-                            <button type="button" id="fases-select-none" class="btn-quick btn-quick-none">Nenhuma</button>
+                            <button type="button" id="fases-select-none" class="btn-quick">Nenhuma</button>
                         </div>
                     </div>
                     <div class="checkbox-grid" id="fases-container">
-                        <!-- Checkboxes will be injected here -->
+                        <!-- injected by JS -->
                     </div>
                 </div>
 
@@ -93,16 +88,9 @@
                         <input type="date" id="data-final">
                     </div>
                 </div>
+
                 <div class="alert alert-warning">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
-                        </path>
-                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                    <span>Atenção: só serão inseridos na lista mestra final arquivos cuja <strong>Data de Alteração</strong>
-                        esteja no intervalo selecionado acima!</span>
+                    <strong>Atenção:</strong> só serão inseridos na lista mestra final arquivos cuja Data de Alteração esteja no intervalo selecionado acima!
                 </div>
 
                 <div class="form-group mt-3">
@@ -110,15 +98,15 @@
                         <label>Disciplinas (Selecione as disciplinas que deseja incluir:)</label>
                         <div class="quick-select-btns">
                             <button type="button" id="disciplinas-select-all" class="btn-quick">Selecionar todas</button>
-                            <button type="button" id="disciplinas-select-none"
-                                class="btn-quick btn-quick-none">Nenhuma</button>
+                            <button type="button" id="disciplinas-select-none" class="btn-quick">Nenhuma</button>
                         </div>
                     </div>
                     <div class="checkbox-grid" id="disciplinas-container">
-                        <!-- Checkboxes will be injected here -->
+                        <!-- injected by JS -->
                     </div>
                 </div>
-                <div class="step-nav">
+
+                <div class="step-nav" style="display: flex; gap: 1rem; margin-top: 2rem;">
                     <button id="step2-back" class="btn btn-ghost">Voltar</button>
                     <button id="step2-next" class="btn btn-primary">Continuar</button>
                 </div>
@@ -131,17 +119,17 @@
                     <span class="step-number">3</span>
                     <h2>Pré-visualização (Opcional)</h2>
                 </div>
-                <p class="subtitle subtitle-left">A prévia é opcional. Se não precisar revisar, você pode pular esta etapa e gerar direto.</p>
+                <p class="subtitle" style="text-align: left; margin: 0 0 1.5rem 0;">A prévia é opcional. Se não precisar revisar, você pode pular esta etapa e gerar direto.</p>
                 <button id="preview-btn" class="btn btn-primary">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                        stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                     Gerar Pré-visualização
                 </button>
                 <div class="loader" id="preview-loader" style="display: none;">Montando tabela de dados...</div>
-                <div class="step-nav">
+                <div class="step-nav" style="display: flex; gap: 1rem; margin-top: 2rem;">
                     <button id="step3-back" class="btn btn-ghost">Voltar</button>
                     <button id="step3-skip" class="btn btn-ghost">Pular Prévia</button>
                     <button id="step3-next" class="btn btn-primary" disabled>Continuar</button>
@@ -156,142 +144,103 @@
                     <h2>Gerar e Baixar Lista Mestra</h2>
                 </div>
 
-                <!-- Barra de edição em massa -->
-                <div id="bulk-edit-bar" style="display:none; margin-bottom: 1rem;" class="bulk-edit-bar">
-                    <div class="bulk-bar-header">
-                        <strong id="bulk-count">0 linha(s) selecionada(s)</strong>
-                        <span style="opacity:0.4; margin: 0 0.5rem;">|</span>
-                        <span style="font-size:0.85rem; color:#94a3b8;">Preencha os campos abaixo e clique em Aplicar para
-                            alterar todas as linhas selecionadas</span>
+                <!-- Bulk edit bar -->
+                <div id="bulk-edit-bar" style="display:none; margin-bottom: 1.5rem;" class="bulk-edit-bar">
+                    <div style="margin-bottom: 1rem; font-weight: 600;">
+                        <span id="bulk-count">0 linha(s) selecionada(s)</span>
+                        <span style="color: var(--text-light); font-weight: 400; font-size: 0.9rem; margin-left: 1rem;">Preencha os campos e clique em Aplicar</span>
                     </div>
-                    <div class="bulk-fields-row">
-                        <div class="bulk-field-group">
-                            <label>Liberado Orçamento</label>
-                            <select id="bulk-orcam">
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.8rem;">Lib. Orçamento</label>
+                            <select id="bulk-orcam" style="padding: 0.5rem;">
                                 <option value="">(sem alteração)</option>
                                 <option value="SIM">SIM</option>
                                 <option value="NÃO">NÃO</option>
                             </select>
                         </div>
-                        <div class="bulk-field-group">
-                            <label>Liberado para Compra de Materiais</label>
-                            <select id="bulk-materiais">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 0.8rem;">Lib. Materiais</label>
+                            <select id="bulk-materiais" style="padding: 0.5rem;">
                                 <option value="">(sem alteração)</option>
                                 <option value="SIM">SIM</option>
                                 <option value="NÃO">NÃO</option>
                             </select>
                         </div>
-                        <div class="bulk-field-group">
-                            <label>Observações</label>
-                            <input type="text" id="bulk-obs" placeholder="(sem alteração)">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
+                            <label style="font-size: 0.8rem;">Observações</label>
+                            <input type="text" id="bulk-obs" placeholder="(sem alteração)" style="padding: 0.5rem;">
                         </div>
-                        <div class="bulk-field-group">
-                            <label>Prazo Entrega</label>
-                            <input type="date" id="bulk-prazo-entrega">
-                        </div>
-                        <div class="bulk-field-group">
-                            <label>Prazo Análise</label>
-                            <input type="date" id="bulk-prazo-analise">
-                        </div>
-                        <button id="bulk-apply-btn" class="btn-bulk-apply">Aplicar ✔</button>
+                        <button id="bulk-apply-btn" class="btn btn-primary" style="padding: 0.5rem 1rem;">Aplicar ✔</button>
                     </div>
                 </div>
 
-                <div class="action-bar">
-                    <button id="generate-btn" class="btn btn-success" style="display: inline-flex;">
+                <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+                    <button id="generate-btn" class="btn btn-success">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                        Confirmar Dados e Gerar Lista
+                        Confirmar e Gerar Lista
                     </button>
-                    <label class="preview-toggle">
-                        <input type="checkbox" id="show-preview-toggle">
-                        <span>Mostrar pré-visualização</span>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-light);">
+                        <input type="checkbox" id="show-preview-toggle" style="width: 18px; height: 18px;">
+                        Mostrar pré-visualização
                     </label>
                 </div>
-                <div class="loader" id="generate-loader" style="display: none;">Gerando lista mestra com revisões, por favor
-                    aguarde...</div>
+                
+                <div class="loader" id="generate-loader" style="display: none;">Gerando lista mestra...</div>
 
-                <div id="download-section" style="display: none; margin-top: 1rem;">
-                    <div class="alert alert-success mt-1 mb-1">
+                <div id="download-section" style="display: none; margin-top: 2rem;">
+                    <div class="alert alert-success">Processamento concluído com sucesso!</div>
+                    <a id="download-link" href="#" class="btn btn-success" style="background: var(--success); width: auto;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                        Processamento concluído com sucesso!
-                    </div>
-                    <a id="download-link" href="#" class="btn btn-download">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
-                        Baixar Planilha Final ajustada
+                        Baixar Planilha Final
                     </a>
                 </div>
 
-                <div class="table-responsive" id="table-container" style="display: none; margin-top: 1.5rem;">
+                <div class="table-responsive" id="table-container" style="display: none; margin-top: 2rem;">
                     <table class="data-table" id="preview-table">
                         <thead>
                             <tr>
-                                <th class="col-check"><input type="checkbox" id="select-all-rows" title="Selecionar todas">
-                                </th>
-                                <th class="sortable" data-col="0">
-                                    <div class="th-content">Disciplina <span class="filter-icon" data-col="0">&#9660;</span>
-                                    </div>
-                                </th>
-                                <th class="sortable" data-col="1">
-                                    <div class="th-content">Fase <span class="filter-icon" data-col="1">&#9660;</span></div>
-                                </th>
-                                <th class="sortable" data-col="2">
-                                    <div class="th-content">Código <span class="filter-icon" data-col="2">&#9660;</span>
-                                    </div>
-                                </th>
-                                <th class="sortable" data-col="3">
-                                    <div class="th-content">Revisão <span class="filter-icon" data-col="3">&#9660;</span>
-                                    </div>
-                                </th>
-                                <th class="sortable" data-col="4">
-                                    <div class="th-content">Documento <span class="filter-icon" data-col="4">&#9660;</span>
-                                    </div>
-                                </th>
-                                <th class="sortable" data-col="5">
-                                    <div class="th-content">Extensão <span class="filter-icon" data-col="5">&#9660;</span>
-                                    </div>
-                                </th>
-                                <th class="sortable" data-col="6">
-                                    <div class="th-content">Situação <span class="filter-icon" data-col="6">&#9660;</span>
-                                    </div>
-                                </th>
-                                <th class="sortable" data-col="7">
-                                    <div class="th-content">Título <span class="filter-icon" data-col="7">&#9660;</span>
-                                    </div>
-                                </th>
-                                <th class="editable-col">Liberado Orçamento</th>
-                                <th class="editable-col">Liberado para Compra de Materiais</th>
-                                <th class="editable-col">Observações</th>
-                                <th class="editable-col">Prazo Entrega</th>
-                                <th class="editable-col">Prazo Análise</th>
+                                <th style="width: 40px;"><input type="checkbox" id="select-all-rows"></th>
+                                <th class="sortable" data-col="0">Disciplina</th>
+                                <th class="sortable" data-col="1">Fase</th>
+                                <th class="sortable" data-col="2">Código</th>
+                                <th class="sortable" data-col="3">Revisão</th>
+                                <th class="sortable" data-col="4">Documento</th>
+                                <th class="sortable" data-col="5">Extensão</th>
+                                <th class="sortable" data-col="6">Situação</th>
+                                <th class="sortable" data-col="7">Título</th>
+                                <th>Lib. Orçamento</th>
+                                <th>Lib. Materiais</th>
+                                <th>Observações</th>
+                                <th>Prazo Entrega</th>
+                                <th>Prazo Análise</th>
                             </tr>
                         </thead>
-                        <tbody>
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
-                <div class="step-nav">
+
+                <div class="step-nav" style="margin-top: 2rem;">
                     <button id="step4-back" class="btn btn-ghost">Voltar</button>
                 </div>
             </div>
         </section>
 
         <footer>
-            <p class="warning"><strong>Atenção:</strong> os documentos gerados por este script, ou parte deles, são de
-                uso exclusivo para a <strong>Rottas Construtora e Incorporadora</strong>. Seu envio para terceiros, bem
-                como sua reprodução total ou parcial, são proibidos.</p>
-            <p class="credits">Criado por Gilmar Ceregato | 2025<br>Rev. 03 - 04/03/2026</p>
+            <div class="alert alert-error" style="background: transparent; border: none; padding: 0; color: var(--text-light); text-align: center;">
+                <strong>Atenção:</strong> os documentos gerados por este script são de uso exclusivo para a Rottas Construtora.
+            </div>
+            <div style="text-align: center; color: var(--text-light); font-size: 0.85rem; margin-top: 1rem;">
+                Criado por Gilmar Ceregato | 2025<br>Rev. 04 - 11/04/2026
+            </div>
         </footer>
     </main>
 
