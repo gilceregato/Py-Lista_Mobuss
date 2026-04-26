@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="color-scheme" content="dark">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
@@ -41,7 +42,7 @@
                     <input type="file" id="excel-file" accept=".xlsx" hidden>
                     <label for="excel-file" class="file-upload-box" id="drop-zone">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; color: var(--secondary);">
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; color: var(--color-accent);">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -148,7 +149,7 @@
                 <div id="bulk-edit-bar" style="display:none; margin-bottom: 1.5rem;" class="bulk-edit-bar">
                     <div style="margin-bottom: 1rem; font-weight: 600;">
                         <span id="bulk-count">0 linha(s) selecionada(s)</span>
-                        <span style="color: var(--text-light); font-weight: 400; font-size: 0.9rem; margin-left: 1rem;">Preencha os campos e clique em Aplicar</span>
+                        <span style="color: var(--color-text-muted); font-weight: 400; font-size: 0.9rem; margin-left: 1rem;">Preencha os campos e clique em Aplicar</span>
                     </div>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
                         <div class="form-group" style="margin-bottom: 0;">
@@ -183,8 +184,8 @@
                         </svg>
                         Confirmar e Gerar Lista
                     </button>
-                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-light);">
-                        <input type="checkbox" id="show-preview-toggle" style="width: 18px; height: 18px;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--color-text-secondary);">
+                        <input type="checkbox" id="show-preview-toggle" style="width: 18px; height: 18px; accent-color: var(--color-accent);">
                         Mostrar pré-visualização
                     </label>
                 </div>
@@ -193,7 +194,7 @@
 
                 <div id="download-section" style="display: none; margin-top: 2rem;">
                     <div class="alert alert-success">Processamento concluído com sucesso!</div>
-                    <a id="download-link" href="#" class="btn btn-success" style="background: var(--success); width: auto;">
+                    <a id="download-link" href="#" class="btn btn-success" style="width: auto;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -235,10 +236,10 @@
         </section>
 
         <footer>
-            <div class="alert alert-error" style="background: transparent; border: none; padding: 0; color: var(--text-light); text-align: center;">
+            <div class="alert alert-error" style="background: transparent; border: none; padding: 0; color: var(--color-text-muted); text-align: center;">
                 <strong>Atenção:</strong> os documentos gerados por este script são de uso exclusivo para a Rottas Construtora.
             </div>
-            <div style="text-align: center; color: var(--text-light); font-size: 0.85rem; margin-top: 1rem;">
+            <div class="footer-credit">
                 Criado por Gilmar Ceregato | 2025<br>Rev. 04 - 11/04/2026
             </div>
         </footer>
